@@ -212,10 +212,15 @@ It watches your files and re-runs the tests when you save. To run them once and 
 
 ```bash
 docker image build --tag my-vue-app .
-docker container run -d -p 9000:80 my-vue-app
+docker container run -d -p 9000:8080 \
+    --read-only --tmpfs /tmp \
+    --cap-drop ALL --security-opt no-new-privileges \
+    my-vue-app
 ```
 
-Then open `http://localhost:9000`.
+Then open `http://localhost:9000`. `http://localhost:9000/healthz` answers `ok` when the container is healthy.
+
+The image is hardened. The base images are pinned to exact versions and digests, the build installs packages without running their install scripts, and Nginx runs as a non-root user. That's why it listens on port 8080, not 80. It also sends security headers, including a Content Security Policy that only lets the page talk to its own server and `dummyjson.com`. The run command above adds a read-only file system and drops every Linux capability.
 
 The Google Cloud steps are in `gcloud-deployment-commands.txt`. They need the **Google Cloud CLI** (`gcloud`) and a Google Cloud billing account, and they **cost real money while the app is deployed**. Use your own project name in place of `my-unique-vue3-project` (project names are unique across all of Google Cloud). When you're done, delete the project, which removes everything in it and stops the charges:
 
